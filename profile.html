@@ -197,7 +197,7 @@
                         childCard.className = 'list-group-item list-group-item-action flex-column align-items-start mb-2 shadow-sm border-left-primary'; // Added border-left
                         childCard.innerHTML = \`
                             <div class="d-flex w-100 justify-content-between">
-                                <h5 class="mb-1 h6"><a href="child_dashboard.html?child=\${encodeURIComponent(child.name)}">\${child.name}</a></h5>
+                                <h5 class="mb-1 h6"><a href="child_dashboard.html?child=${encodeURIComponent(child.name)}">${child.name.replace(/`/g, '&grave;')}</a></h5>
                                 <small>Age: \${child.age}</small>
                             </div>
                             <p class="mb-1"><small>Annual Gift Savings Contribution: $ \${(child.annualCashGiftToSavings || 0).toFixed(2)}</small></p>

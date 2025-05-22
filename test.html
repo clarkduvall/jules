@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Allowance App - Unit Tests</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { padding: 20px; font-family: Arial, sans-serif; }
+        #testResults { margin-top: 20px; }
+        .test-summary { font-weight: bold; margin-bottom: 10px; }
+        .test-pass { color: green; }
+        .test-fail { color: red; }
+        .test-message { margin-left: 20px; font-style: italic; }
+        ul { list-style-type: none; padding-left: 0; }
+        li { margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="jumbotron text-center py-4">
+            <h1>Unit Test Results</h1>
+        </header>
+        
+        <div id="testSummary" class="test-summary alert alert-info">Running tests...</div>
+        <ul id="testResultsList"></ul>
+    </div>
+
+    <!-- Scripts to be tested and the test script itself -->
+    <script src="utils.js"></script>
+    <script src="tests.js"></script>
+</body>
+</html>

@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Allowance Management - Child Dashboard</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .card-title { margin-bottom: 1.5rem; }
+        .balance-card p { font-size: 1.2rem; margin-bottom: 0.5rem; }
+        .balance-card strong { font-weight: 500; }
+    </style>
+    <script>
+        // Basic session check
+        if (!localStorage.getItem('loggedInUser')) {
+            window.location.href = 'index.html';
+        }
+    </script>
+    <script src="utils.js"></script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="profile.html">AllowanceApp</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="profile.html">Parent Profile</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" id="childDashboardNavLink" href="#">Child Dashboard <span class="sr-only">(current)</span></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="whiteboardNavLink" href="#">Whiteboard</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <button id="logoutButtonNav" class="btn btn-outline-light">Logout</button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header class="jumbotron my-4 text-center py-4">
+            <h1 class="display-4" id="childNameHeading">Child Dashboard</h1>
+            <p class="lead text-muted" id="childAgeDisplay"></p>
+        </header>
+
+        <div class="row">
+            <div class="col-lg-6 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h4 class="card-title h5">Allowance Details</h4>
+                        <p>Calculated Total Weekly Allowance: <strong class="text-success">$<span id="totalWeeklyAllowance">0.00</span></strong></p>
+                        <ul class="list-group list-group-flush mb-3">
+                            <li class="list-group-item px-0">Savings (20%): $<span id="allowanceSavings">0.00</span></li>
+                            <li class="list-group-item px-0">Tithing (10%): $<span id="allowanceTithing">0.00</span></li>
+                            <li class="list-group-item px-0">Checking (70%): $<span id="allowanceChecking">0.00</span></li>
+                        </ul>
+                        <button id="payAllowanceButton" class="btn btn-success btn-block">Pay Weekly Allowance</button>
+                        <div id="allowanceFeedback" class="mt-2"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6 mb-4">
+                <div class="card shadow-sm balance-card">
+                    <div class="card-body">
+                        <h4 class="card-title h5">Account Balances</h4>
+                        <p>Checking: <strong>$<span id="checkingBalance">0.00</span></strong></p>
+                        <p>Savings: <strong>$<span id="savingsBalance">0.00</span></strong> 
+                           <br><small class="text-muted">(Annual Rate: <span id="annualInterestRate">0</span>%)</small>
+                        </p>
+                        <p>Tithing: <strong>$<span id="tithingBalance">0.00</span></strong></p>
+                        <hr>
+                        <p class="mb-2">Potential Next Month's Interest: <strong class="text-info">$<span id="nextMonthInterest">0.00</span></strong></p>
+                        <button id="accrueInterestButton" class="btn btn-info btn-block">Accrue Monthly Interest</button>
+                        <div id="interestFeedback" class="mt-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h4 class="card-title h5">Transactions</h4>
+                <a id="addTransactionLink" href="transactions.html" class="btn btn-primary mb-3">Add New Transaction</a>
+                <h5 class="h6 mt-3">Recent Transactions:</h5>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover table-sm">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Account</th>
+                                <th>Description</th>
+                                <th class="text-right">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionHistory">
+                            <!-- Transactions will be listed here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS, Popper.js, and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const loggedInUser = localStorage.getItem('loggedInUser');
+            if (!loggedInUser) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const childName = urlParams.get('child');
+
+            if (!childName) {
+                alert('Child identifier missing from URL.');
+                window.location.href = 'profile.html';
+                return;
+            }
+            
+            // Update navbar links
+            document.getElementById('childDashboardNavLink').href = `child_dashboard.html?child=${encodeURIComponent(childName)}`;
+            document.getElementById('whiteboardNavLink').href = `whiteboard.html?child=${encodeURIComponent(childName)}`;
+
+
+            document.getElementById('childNameHeading').textContent = `${decodeURIComponent(childName)}'s Dashboard`;
+            document.getElementById('addTransactionLink').href = `transactions.html?child=${encodeURIComponent(childName)}`;
+
+            const parentDataString = localStorage.getItem(loggedInUser + '_data');
+            if (!parentDataString) {
+                alert("Parent data not found. Please configure settings in your profile.");
+                window.location.href = 'profile.html';
+                return;
+            }
+            const parentData = JSON.parse(parentDataString);
+            
+            let childIndex = -1; 
+            let childData;
+
+            if (parentData && parentData.children) {
+                childIndex = parentData.children.findIndex(c => c.name === decodeURIComponent(childName));
+                if (childIndex !== -1) {
+                    childData = parentData.children[childIndex];
+                }
+            }
+
+            if (childData) {
+                document.getElementById('childAgeDisplay').textContent = `Age: ${childData.age}`;
+                
+                if (!childData.accounts) childData.accounts = { checking: 0, savings: 0, tithing: 0 };
+                childData.accounts.checking = parseFloat(childData.accounts.checking || 0);
+                childData.accounts.savings = parseFloat(childData.accounts.savings || 0);
+                childData.accounts.tithing = parseFloat(childData.accounts.tithing || 0);
+                
+                if (!childData.transactions) childData.transactions = [];
+
+                function updateBalancesDisplay() {
+                    document.getElementById('checkingBalance').textContent = (childData.accounts.checking || 0).toFixed(2);
+                    document.getElementById('savingsBalance').textContent = (childData.accounts.savings || 0).toFixed(2);
+                    document.getElementById('tithingBalance').textContent = (childData.accounts.tithing || 0).toFixed(2);
+                }
+                updateBalancesDisplay();
+
+                function displayTransactions() {
+                    const historyTableBody = document.getElementById('transactionHistory');
+                    historyTableBody.innerHTML = ''; 
+                    const sortedTransactions = childData.transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                    if (sortedTransactions.length > 0) {
+                        sortedTransactions.forEach(tx => {
+                            const row = historyTableBody.insertRow();
+                            row.insertCell().textContent = tx.date; 
+                            row.insertCell().textContent = tx.type;
+                            row.insertCell().textContent = tx.account;
+                            row.insertCell().textContent = tx.description;
+                            const amountCell = row.insertCell();
+                            amountCell.textContent = `$${parseFloat(tx.amount).toFixed(2)}`;
+                            amountCell.className = 'text-right';
+                            if (tx.type === 'Withdrawal' || tx.type.includes('Expense')) { // Example, adjust if needed
+                                amountCell.classList.add('text-danger');
+                            } else if (tx.type === 'Deposit' || tx.type === 'Allowance' || tx.type === 'Interest Earned' || tx.type.includes('Gift')) {
+                                amountCell.classList.add('text-success');
+                            }
+                        });
+                    } else {
+                        const row = historyTableBody.insertRow();
+                        const cell = row.insertCell();
+                        cell.colSpan = 5;
+                        cell.textContent = 'No transactions yet.';
+                        cell.style.textAlign = 'center';
+                    }
+                }
+                displayTransactions();
+
+                const allowanceMultiplier = (parentData.settings && parentData.settings.allowanceMultiplier !== undefined) ? parentData.settings.allowanceMultiplier : 1.0;
+                const maxMonthlyBudget = (parentData.settings && parentData.settings.maxMonthlyBudget) ? parentData.settings.maxMonthlyBudget : Infinity;
+                const weeklyBudgetCap = maxMonthlyBudget / 4.33; 
+                const totalWeeklyAllowanceUncapped = calculateWeeklyAllowance(childData.age, allowanceMultiplier);
+                const totalWeeklyAllowance = Math.min(totalWeeklyAllowanceUncapped, weeklyBudgetCap);
+
+                const allowanceSavings = totalWeeklyAllowance * 0.20;
+                const allowanceTithing = totalWeeklyAllowance * 0.10;
+                const allowanceChecking = totalWeeklyAllowance * 0.70;
+
+                document.getElementById('totalWeeklyAllowance').textContent = totalWeeklyAllowance.toFixed(2);
+                document.getElementById('allowanceSavings').textContent = allowanceSavings.toFixed(2);
+                document.getElementById('allowanceTithing').textContent = allowanceTithing.toFixed(2);
+                document.getElementById('allowanceChecking').textContent = allowanceChecking.toFixed(2);
+
+                document.getElementById('payAllowanceButton').addEventListener('click', function() {
+                    const currentSavings = childData.accounts.savings; // Save before modification
+                    const currentTithing = childData.accounts.tithing;
+                    const currentChecking = childData.accounts.checking;
+
+                    childData.accounts.savings += allowanceSavings;
+                    childData.accounts.tithing += allowanceTithing;
+                    childData.accounts.checking += allowanceChecking;
+                    
+                    const allowanceDesc = "Weekly Allowance";
+                    if (allowanceSavings > 0) childData.transactions.push(formatTransaction('Allowance', allowanceSavings, allowanceDesc, 'Savings'));
+                    if (allowanceTithing > 0) childData.transactions.push(formatTransaction('Allowance', allowanceTithing, allowanceDesc, 'Tithing'));
+                    if (allowanceChecking > 0) childData.transactions.push(formatTransaction('Allowance', allowanceChecking, allowanceDesc, 'Checking'));
+
+                    parentData.children[childIndex] = childData;
+                    localStorage.setItem(loggedInUser + '_data', JSON.stringify(parentData));
+                    
+                    updateBalancesDisplay();
+                    displayTransactions(); 
+                    updateInterestDisplay(); 
+                    
+                    const feedback = document.getElementById('allowanceFeedback');
+                    feedback.textContent = 'Weekly allowance paid successfully!';
+                    feedback.className = 'alert alert-success mt-2';
+                    setTimeout(() => { feedback.textContent = ''; feedback.className='';}, 3000);
+                });
+
+                const annualRateDecimal = getAnnualInterestRate(childData.age);
+                const annualRatePercent = (annualRateDecimal * 100).toFixed(2); // For display
+                const calculationAnnualRate = annualRateDecimal; // For calculation
+
+                document.getElementById('annualInterestRate').textContent = annualRatePercent;
+
+                function updateInterestDisplay() {
+                    const currentSavingsBalance = parseFloat(childData.accounts.savings || 0);
+                    const potentialInterest = calculateInterest(currentSavingsBalance, calculationAnnualRate);
+                    document.getElementById('nextMonthInterest').textContent = potentialInterest.toFixed(2);
+                }
+                updateInterestDisplay();
+
+                document.getElementById('accrueInterestButton').addEventListener('click', function() {
+                    const currentSavingsBalance = parseFloat(childData.accounts.savings || 0);
+                    const interestEarned = calculateInterest(currentSavingsBalance, calculationAnnualRate);
+
+                    if (interestEarned > 0) {
+                        childData.accounts.savings += interestEarned;
+                        childData.transactions.push(formatTransaction('Interest Earned', interestEarned, 'Monthly Savings Interest', 'Savings'));
+                        
+                        parentData.children[childIndex] = childData;
+                        localStorage.setItem(loggedInUser + '_data', JSON.stringify(parentData));
+
+                        updateBalancesDisplay();
+                        displayTransactions(); 
+                        updateInterestDisplay();
+
+                        const feedback = document.getElementById('interestFeedback');
+                        feedback.textContent = `Successfully accrued $${interestEarned.toFixed(2)} interest!`;
+                        feedback.className = 'alert alert-success mt-2';
+                        setTimeout(() => { feedback.textContent = ''; feedback.className='';}, 3000);
+                    } else {
+                        const feedback = document.getElementById('interestFeedback');
+                        feedback.textContent = 'No interest to accrue (balance or rate is zero).';
+                        feedback.className = 'alert alert-info mt-2';
+                        setTimeout(() => { feedback.textContent = ''; feedback.className='';}, 3000);
+                    }
+                });
+
+            } else {
+                alert('Child data not found. Redirecting to profile.');
+                document.getElementById('childNameHeading').textContent = 'Child Data Not Found';
+                ['childAgeDisplay', 'totalWeeklyAllowance', 'allowanceSavings', 'allowanceTithing', 'allowanceChecking', 
+                 'checkingBalance', 'savingsBalance', 'tithingBalance', 'annualInterestRate', 'nextMonthInterest']
+                .forEach(id => document.getElementById(id).textContent = 'N/A');
+                ['payAllowanceButton', 'accrueInterestButton', 'addTransactionLink'].forEach(id => {
+                    const btn = document.getElementById(id);
+                    btn.disabled = true;
+                    if(id === 'addTransactionLink') btn.classList.add('disabled');
+                });
+                document.getElementById('transactionHistory').innerHTML = '<tr><td colspan="5" class="text-center">Child data not found.</td></tr>';
+
+                setTimeout(() => {
+                     window.location.href = 'profile.html';
+                }, 3000);
+            }
+            
+            document.getElementById('logoutButtonNav').addEventListener('click', function() {
+                localStorage.removeItem('loggedInUser');
+                window.location.href = 'index.html';
+            });
+        });
+    </script>
+</body>
+</html>

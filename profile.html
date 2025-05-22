@@ -142,10 +142,24 @@
                 parentData.children = [];
             }
 
-            if (loggedInUser && userCredentials) {
-                document.getElementById('usernamePlaceholder').textContent = userCredentials.username;
-                document.getElementById('emailPlaceholder').textContent = userCredentials.email;
+            const usernameDisplay = document.getElementById('usernamePlaceholder');
+            const emailDisplay = document.getElementById('emailPlaceholder');
+
+            if (loggedInUser && userCredentials && typeof userCredentials === 'object') {
+                // Only update if the properties exist and are non-empty strings
+                if (userCredentials.username && typeof userCredentials.username === 'string' && userCredentials.username.trim() !== "") {
+                    usernameDisplay.textContent = userCredentials.username;
+                }
+                // If userCredentials.username is not a valid string, the placeholder "[Parent Name]" will remain.
+                
+                if (userCredentials.email && typeof userCredentials.email === 'string' && userCredentials.email.trim() !== "") {
+                    emailDisplay.textContent = userCredentials.email;
+                }
+                // If userCredentials.email is not a valid string, the placeholder "[Parent Email]" will remain.
             } else {
+                // This case handles if userCredentials is not a valid object or loggedInUser is missing.
+                // The initial script on the page already handles !loggedInUser.
+                // So this else primarily catches issues with userCredentials.
                 window.location.href = 'index.html';
                 return;
             }
@@ -227,7 +241,7 @@
                 const childName = document.getElementById('childName').value.trim();
                 const childAge = parseInt(document.getElementById('childAge').value);
 
-                if (childName && childAge >= 0) { // Allow age 0
+                if (childName && childAge >= 0) {
                     const newChild = {
                         name: childName,
                         age: childAge,

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Allowance Management - Profile</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; } /* Light background for the whole page */
+        .card-title { margin-bottom: 1.5rem; }
+    </style>
+    <script>
+        // Basic session check
+        if (!localStorage.getItem('loggedInUser')) {
+            window.location.href = 'index.html';
+        }
+    </script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="#">AllowanceApp</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item active">
+                        <a class="nav-link" href="profile.html">Profile <span class="sr-only">(current)</span></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="whiteboard.html" id="whiteboardNavLink">Whiteboard</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <button id="logoutButton" class="btn btn-outline-light">Logout</button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header class="jumbotron my-4 text-center py-4">
+            <h1 class="display-4">Parent Dashboard</h1>
+            <p class="lead text-muted">Manage your profile, settings, and children.</p>
+        </header>
+
+        <div class="row">
+            <div class="col-lg-4 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h4 class="card-title h5">User Information</h4>
+                        <p><strong>Name:</strong> <span id="usernamePlaceholder">[Parent Name]</span></p>
+                        <p><strong>Email:</strong> <span id="emailPlaceholder">[Parent Email]</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-8 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h4 class="card-title h5">Allowance & Budget Settings</h4>
+                        <form id="allowanceSettingsForm">
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="allowanceMultiplier">Allowance Multiplier</label>
+                                    <input type="number" class="form-control" id="allowanceMultiplier" step="0.01" min="0" value="1.0" required>
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="maxMonthlyBudget">Max Monthly Budget/Child</label>
+                                    <input type="number" class="form-control" id="maxMonthlyBudget" step="1" min="0" placeholder="e.g., 50">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="giftSavingsPercentage">Gift Savings % (min 20)</label>
+                                    <input type="number" class="form-control" id="giftSavingsPercentage" step="1" min="20" max="100" placeholder="e.g., 20">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="maxGiftContribution">Max Gift Savings Contrib.</label>
+                                    <input type="number" class="form-control" id="maxGiftContribution" step="1" min="0" placeholder="e.g., 50">
+                                </div>
+                            </div>
+                             <div class="form-group">
+                                <label for="estimatedCashGifts">Est. Annual Cash Gifts (Overall)</label>
+                                <input type="number" class="form-control" id="estimatedCashGifts" step="1" min="0" placeholder="e.g., 100">
+                            </div>
+                            <button type="submit" class="btn btn-success btn-block">Save Settings</button>
+                            <div id="settingsFeedback" class="mt-2"></div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h4 class="card-title h5">Manage Children</h4>
+                <form id="addChildForm" class="mb-3">
+                    <div class="form-row align-items-end">
+                        <div class="form-group col-md-5">
+                            <label for="childName">Child's Name</label>
+                            <input type="text" class="form-control" id="childName" placeholder="Enter name" required>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="childAge">Child's Age</label>
+                            <input type="number" class="form-control" id="childAge" placeholder="Enter age" required min="0">
+                        </div>
+                        <div class="form-group col-md-3">
+                            <button type="submit" class="btn btn-primary btn-block">Add Child</button>
+                        </div>
+                    </div>
+                </form>
+
+                <h5 class="h6 mt-4">My Children:</h5>
+                <div id="childrenList" class="list-group">
+                    <!-- Children will be listed here using Bootstrap list-group-item and cards potentially -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS, Popper.js, and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const loggedInUser = localStorage.getItem('loggedInUser');
+            const userCredentials = JSON.parse(localStorage.getItem('userCredentials'));
+            
+            let parentData = JSON.parse(localStorage.getItem(loggedInUser + '_data'));
+            if (!parentData) {
+                parentData = { children: [], settings: {} }; 
+            } else if (!parentData.settings) {
+                parentData.settings = {}; 
+            }
+             if (!parentData.children) {
+                parentData.children = [];
+            }
+
+            const usernameDisplay = document.getElementById('usernamePlaceholder');
+            const emailDisplay = document.getElementById('emailPlaceholder');
+
+            if (loggedInUser && userCredentials && typeof userCredentials === 'object') {
+                // Only update if the properties exist and are non-empty strings
+                if (userCredentials.username && typeof userCredentials.username === 'string' && userCredentials.username.trim() !== "") {
+                    usernameDisplay.textContent = userCredentials.username;
+                }
+                // If userCredentials.username is not a valid string, the placeholder "[Parent Name]" will remain.
+                
+                if (userCredentials.email && typeof userCredentials.email === 'string' && userCredentials.email.trim() !== "") {
+                    emailDisplay.textContent = userCredentials.email;
+                }
+                // If userCredentials.email is not a valid string, the placeholder "[Parent Email]" will remain.
+            } else {
+                // This case handles if userCredentials is not a valid object or loggedInUser is missing.
+                // The initial script on the page already handles !loggedInUser.
+                // So this else primarily catches issues with userCredentials.
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const allowanceSettingsForm = document.getElementById('allowanceSettingsForm');
+            document.getElementById('allowanceMultiplier').value = parentData.settings.allowanceMultiplier || 1.0;
+            document.getElementById('maxMonthlyBudget').value = parentData.settings.maxMonthlyBudget || '';
+            document.getElementById('estimatedCashGifts').value = parentData.settings.estimatedCashGifts || '';
+            document.getElementById('giftSavingsPercentage').value = parentData.settings.giftSavingsPercentage || 20;
+            document.getElementById('maxGiftContribution').value = parentData.settings.maxGiftContribution || '';
+
+            allowanceSettingsForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                parentData.settings.allowanceMultiplier = parseFloat(document.getElementById('allowanceMultiplier').value) || 1.0;
+                parentData.settings.maxMonthlyBudget = parseFloat(document.getElementById('maxMonthlyBudget').value) || 0;
+                parentData.settings.estimatedCashGifts = parseFloat(document.getElementById('estimatedCashGifts').value) || 0;
+                parentData.settings.giftSavingsPercentage = parseInt(document.getElementById('giftSavingsPercentage').value) || 20;
+                parentData.settings.maxGiftContribution = parseFloat(document.getElementById('maxGiftContribution').value) || 0;
+
+                localStorage.setItem(loggedInUser + '_data', JSON.stringify(parentData));
+                const feedback = document.getElementById('settingsFeedback');
+                feedback.textContent = 'Settings saved successfully!';
+                feedback.className = 'alert alert-success mt-2';
+                setTimeout(() => { feedback.textContent = ''; feedback.className=''; }, 3000);
+            });
+
+            const addChildForm = document.getElementById('addChildForm');
+            const childrenList = document.getElementById('childrenList');
+
+            function displayChildren() {
+                childrenList.innerHTML = ''; 
+                if (parentData.children && parentData.children.length > 0) {
+                    parentData.children.forEach((child, index) => {
+                        const childCard = document.createElement('div');
+                        childCard.className = 'list-group-item list-group-item-action flex-column align-items-start mb-2 shadow-sm border-left-primary'; // Added border-left
+                        childCard.innerHTML = `
+                            <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1 h6"><a href="child_dashboard.html?child=\${encodeURIComponent(child.name)}">\${child.name}</a></h5>
+                                <small>Age: \${child.age}</small>
+                            </div>
+                            <p class="mb-1"><small>Annual Gift Savings Contribution: $ \${(child.annualCashGiftToSavings || 0).toFixed(2)}</small></p>
+                            <div>
+                                <button class="btn btn-warning btn-sm reset-gift-savings mr-2" data-child-index="\${index}">Reset Gift Savings</button>
+                                <button class="btn btn-danger btn-sm delete-child" data-child-name="\${child.name}">Delete Child</button>
+                            </div>
+                        \`;
+                        childrenList.appendChild(childCard);
+                    });
+                    
+                    document.querySelectorAll('.delete-child').forEach(button => {
+                        button.addEventListener('click', function() {
+                            const childNameToDelete = this.getAttribute('data-child-name');
+                            if (confirm(\`Are you sure you want to delete \${childNameToDelete}? This action cannot be undone.\`)) {
+                                parentData.children = parentData.children.filter(c => c.name !== childNameToDelete);
+                                localStorage.setItem(loggedInUser + '_data', JSON.stringify(parentData));
+                                displayChildren(); 
+                            }
+                        });
+                    });
+
+                    document.querySelectorAll('.reset-gift-savings').forEach(button => {
+                        button.addEventListener('click', function() {
+                            const childIndexToReset = parseInt(this.getAttribute('data-child-index'));
+                            if (confirm(\`Are you sure you want to reset the annual cash gift savings counter for \${parentData.children[childIndexToReset].name}?\`)) {
+                                parentData.children[childIndexToReset].annualCashGiftToSavings = 0;
+                                localStorage.setItem(loggedInUser + '_data', JSON.stringify(parentData));
+                                displayChildren(); 
+                            }
+                        });
+                    });
+
+                } else {
+                    childrenList.innerHTML = '<div class="list-group-item">No children added yet. Add one above!</div>';
+                }
+            }
+
+            addChildForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                const childName = document.getElementById('childName').value.trim();
+                const childAge = parseInt(document.getElementById('childAge').value);
+
+                if (childName && childAge >= 0) {
+                    const newChild = {
+                        name: childName,
+                        age: childAge,
+                        accounts: { checking: 0, savings: 0, tithing: 0 },
+                        transactions: [],
+                        annualCashGiftToSavings: 0 
+                    };
+                    
+                    if (parentData.children.find(c => c.name === childName)) {
+                        alert('A child with this name already exists.');
+                        return;
+                    }
+
+                    parentData.children.push(newChild);
+                    localStorage.setItem(loggedInUser + '_data', JSON.stringify(parentData));
+                    displayChildren();
+                    addChildForm.reset(); 
+                } else {
+                    alert('Please enter valid child name and age.');
+                }
+            });
+
+            document.getElementById('logoutButton').addEventListener('click', function() {
+                localStorage.removeItem('loggedInUser');
+                window.location.href = 'index.html';
+            });
+            
+            // Determine if whiteboard link in navbar should be active or disabled
+            // For simplicity, it's always enabled here. Could be disabled if no children.
+            // Or it could link to a generic whiteboard page if no child is "active".
+            // For now, it will go to whiteboard.html without a child param if none is selected.
+            // It's better to have a "select a child for whiteboard" or disable if none.
+            // Or, the whiteboard page itself can handle no child parameter.
+            // The previous change to whiteboard.html already handles no child param by redirecting.
+
+            displayChildren();
+        });
+    </script>
+</body>
+</html>

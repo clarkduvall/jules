@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Allowance Management - Login</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            min-height: 100vh;
+            align-items: center;
+            justify-content: center;
+            background-color: #f8f9fa; /* Light gray background */
+        }
+        .login-card {
+            width: 100%;
+            max-width: 400px;
+            padding: 25px;
+            border-radius: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="card login-card shadow-sm">
+        <div class="card-body">
+            <h1 class="card-title text-center mb-4 h3">Login</h1>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" class="form-control" id="username" placeholder="Enter username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" class="form-control" id="password" placeholder="Password" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block mt-4">Login</button>
+            </form>
+            <p class="text-center mt-3">
+                Don't have an account? <a href="register.html">Register here</a>
+            </p>
+            <div id="feedback" class="mt-3"></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent actual form submission
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const feedback = document.getElementById('feedback');
+
+            const storedCredentials = JSON.parse(localStorage.getItem('userCredentials'));
+
+            if (storedCredentials && storedCredentials.username === username && storedCredentials.password === password) {
+                localStorage.setItem('loggedInUser', username); // Set a flag for logged-in user
+                feedback.textContent = 'Login successful! Redirecting to profile...';
+                feedback.className = 'alert alert-success';
+                setTimeout(() => {
+                    window.location.href = 'profile.html';
+                }, 1500); // Redirect after 1.5 seconds
+            } else {
+                feedback.textContent = 'Invalid username or password.';
+                feedback.className = 'alert alert-danger';
+            }
+        });
+    </script>
+</body>
+</html>
